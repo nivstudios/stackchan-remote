@@ -172,6 +172,16 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: v
 .rem .when { font: 500 12px/1.3 var(--mono); color: var(--accent); flex: none; width: 104px; }
 .rem .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .rem button { min-height: 40px; width: 44px; flex: none; padding: 0; letter-spacing: 0; font-size: 16px; }
+.shot { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--faint); background: none; color: var(--fg); text-align: left; font: inherit; letter-spacing: 0; text-transform: none; border-radius: 0; }
+.shot:last-child { border-bottom: 0; }
+.shot .when { font: 500 12px/1.3 var(--mono); color: var(--accent); flex: 1; }
+.shot .size { font: 400 11.5px/1.3 var(--mono); color: var(--dim); flex: none; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .94); display: flex; flex-direction: column; padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+.viewer .pic { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.viewer img { max-width: 100%; max-height: 100%; object-fit: contain; -webkit-touch-callout: default; }
+.viewer .bar { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.viewer .bar .name { flex: 1; min-width: 0; font: 500 12px/1.3 var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+.viewer .bar a, .viewer .bar button { flex: none; }
 .empty { color: var(--dim); font-size: 13px; padding: 6px 0; }
 .log { max-height: 220px; overflow: auto; font: 400 11px/1.5 var(--mono); color: var(--dim); margin-top: 8px; }
 .log div { white-space: pre-wrap; overflow-wrap: anywhere; border-bottom: 1px solid rgba(221,227,230,.05); padding: 2px 0; }
@@ -292,12 +302,21 @@ details[open] > summary::after { content: "\2212"; }
       <button id="btnLive">Live</button>
       <div class="seg" id="fpsSeg" style="flex:0 0 112px"><button data-fps="1" class="on">1</button><button data-fps="2">2</button></div>
     </div>
+    <button id="btnSaveAlbum" style="width:100%;margin-top:8px">Save to album</button>
     <div class="msg" id="camMsg"></div>
+  </div>
+
+  <!-- Album (photos saved on the robot's microSD card) -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">02</span>Album</div><button class="ghost" id="btnAlbumRefresh">Refresh</button></div>
+    <div id="albumList"><div class="empty">—</div></div>
+    <button id="btnAlbumMore" class="hidden" style="width:100%;margin-top:8px">More</button>
+    <div class="msg" id="albumMsg">Photos saved on the robot's microSD card. Tap one to open it.</div>
   </div>
 
   <!-- Head -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">02</span>Head</div><button class="ghost" id="btnFlip" title="Swap left/right">Flip X</button></div>
+    <div class="card-h"><div class="cap"><span class="idx num">03</span>Head</div><button class="ghost" id="btnFlip" title="Swap left/right">Flip X</button></div>
     <div class="pad" id="pad">
       <span class="lbl" style="left:6px;top:6px">88°</span><span class="lbl" style="left:6px;bottom:6px">0°</span>
       <span class="lbl" style="right:6px;bottom:6px" id="padRight">−90°</span>
@@ -314,14 +333,14 @@ details[open] > summary::after { content: "\2212"; }
 
   <!-- Face -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">03</span>Face</div><div class="cap num" id="faceNow"></div></div>
+    <div class="card-h"><div class="cap"><span class="idx num">04</span>Face</div><div class="cap num" id="faceNow"></div></div>
     <div class="grid faces" id="faces"></div>
     <div class="msg" id="faceMsg"></div>
   </div>
 
   <!-- LED + dance -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">04</span>Lights &amp; motion</div></div>
+    <div class="card-h"><div class="cap"><span class="idx num">05</span>Lights &amp; motion</div></div>
     <div class="swatches" id="swatches"></div>
     <div class="rule"></div>
     <div class="cap" style="margin-bottom:8px">Dance</div>
@@ -331,7 +350,7 @@ details[open] > summary::after { content: "\2212"; }
 
   <!-- Screen + volume -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">05</span>Screen &amp; sound</div></div>
+    <div class="card-h"><div class="cap"><span class="idx num">06</span>Screen &amp; sound</div></div>
     <label class="cap" for="txt">Show text</label>
     <div class="row">
       <input id="txt" maxlength="120" placeholder="Hello from far away" style="flex:3">
@@ -350,7 +369,7 @@ details[open] > summary::after { content: "\2212"; }
 
   <!-- Reminders -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">06</span>Reminders</div><button class="ghost" id="btnRemRefresh">Refresh</button></div>
+    <div class="card-h"><div class="cap"><span class="idx num">07</span>Reminders</div><button class="ghost" id="btnRemRefresh">Refresh</button></div>
     <div id="remList"><div class="empty">—</div></div>
     <div class="rule"></div>
     <div class="stack">
@@ -363,14 +382,14 @@ details[open] > summary::after { content: "\2212"; }
 
   <!-- Wake PC -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">07</span>Wake PC</div></div>
+    <div class="card-h"><div class="cap"><span class="idx num">08</span>Wake PC</div></div>
     <button id="btnWake" class="warn" style="width:100%">Wake PC</button>
     <div class="msg" id="wakeMsg">Sends a Wake-on-LAN packet on the robot's network.</div>
   </div>
 
   <!-- Status -->
   <div class="card">
-    <div class="card-h"><div class="cap"><span class="idx num">08</span>Status</div><button class="ghost" id="btnStatus">Refresh</button></div>
+    <div class="card-h"><div class="cap"><span class="idx num">09</span>Status</div><button class="ghost" id="btnStatus">Refresh</button></div>
     <div id="statusGrid" class="kv"><div><div class="cap">—</div><div class="v">—</div></div></div>
     <div class="msg" id="statusMsg"></div>
   </div>
@@ -481,6 +500,15 @@ details[open] > summary::after { content: "\2212"; }
 </section>
 </main>
 
+<div class="viewer hidden" id="albumViewer" role="dialog" aria-label="Album photo">
+  <div class="pic"><img id="albumImg" alt="Album photo"></div>
+  <div class="bar">
+    <span class="name" id="albumName"></span>
+    <a id="albumSave" class="btn" download>Save</a>
+    <button id="albumShare" class="hidden">Share</button>
+    <button id="albumClose" class="primary">Close</button>
+  </div>
+</div>
 <script>
 "use strict";
 (() => {
@@ -664,7 +692,11 @@ async function onMessage(topic, data) {
   const isPc = topic === T.pe;
   if (isPc) pcSeen();
   else { lastSeen = Date.now(); updateRobotChip(); }
-  if (topic === T.i) { showFrame(plain); return; }
+  if (topic === T.i) {
+    if (albumWant && Date.now() < albumWant.until) { const want = albumWant; albumWant = null; showAlbumPhoto(want.name, plain); }
+    else showFrame(plain);
+    return;
+  }
   let msg;
   try { msg = JSON.parse(dec.decode(plain)); } catch (e) { log("bad JSON from " + (isPc ? "PC" : "robot"), "e"); return; }
   if (isPc && msg.re === undefined) { if (msg.ev) handlePcEvent(msg); return; }
@@ -751,7 +783,7 @@ function ping() {
   send("ping", {}, { quiet: true }).then((r) => {
     setSynced(!!r.time_synced);
     // The robot came (back) online: fetch what the initial requests may have missed.
-    if (!wasOnline) { refreshStatus(true); refreshReminders(true); }
+    if (!wasOnline) { refreshStatus(true); refreshReminders(true); refreshAlbum(true); }
   }).catch(() => {});
 }
 setInterval(() => {
@@ -783,6 +815,72 @@ function showFrame(bytes) {
   $("camFps").textContent = liveOn ? (frameTimes.length / 5).toFixed(1) + " fps" : "";
 }
 $("btnSnap").onclick = () => act($("btnSnap"), $("camMsg"), "photo", { quality: 70 }, (r) => "photo " + (r.bytes / 1024).toFixed(1) + " KB", { timeout: 15000 });
+$("btnSaveAlbum").onclick = async () => {
+  const r = await act($("btnSaveAlbum"), $("camMsg"), "photo_save", {}, (r) => "saved to album: " + albumLabel(r.name), { timeout: 20000 });
+  if (r) refreshAlbum(true);
+};
+
+// ---------- album (robot microSD) ----------
+const ALBUM_PAGE = 30;
+let albumWant = null, albumOffset = 0, albumUrl = null;
+function albumLabel(name) {
+  const m = /^(\d{4})(\d{2})(\d{2})\/(\d{2})(\d{2})(\d{2})(\d{2})?\.jpg$/.exec(name || "");
+  if (!m) return name || "";
+  return m[3] + "/" + m[2] + "/" + m[1] + " " + m[4] + ":" + m[5] + ":" + m[6] + (m[7] ? " #" + Number(m[7]) : "");
+}
+function albumFile(name) { return "stackchan-" + String(name).replace("/", "-"); }
+function renderAlbum(list, total, append) {
+  const box = $("albumList");
+  if (!append) box.textContent = "";
+  if (!append && !list.length) { box.innerHTML = '<div class="empty">No photos yet.</div>'; }
+  for (const p of list) {
+    const row = el("button", "shot");
+    row.type = "button";
+    row.append(el("span", "when", albumLabel(p.name)), el("span", "size", (p.bytes / 1024).toFixed(0) + " KB"));
+    row.onclick = () => openAlbumPhoto(p.name, row);
+    box.appendChild(row);
+  }
+  albumOffset = (append ? albumOffset : 0) + list.length;
+  $("btnAlbumMore").classList.toggle("hidden", albumOffset >= total);
+}
+async function refreshAlbum(quiet, append) {
+  const offset = append ? albumOffset : 0;
+  const r = await act(quiet ? null : (append ? $("btnAlbumMore") : $("btnAlbumRefresh")), $("albumMsg"), "photos_list",
+    { offset, limit: ALBUM_PAGE }, (r) => (r.total || 0) + " photo(s) on the card", { quiet });
+  if (r && Array.isArray(r.photos)) renderAlbum(r.photos, r.total || 0, append);
+}
+$("btnAlbumRefresh").onclick = () => refreshAlbum();
+$("btnAlbumMore").onclick = () => refreshAlbum(false, true);
+async function openAlbumPhoto(name, btn) {
+  // A live frame must not land in the viewer: stop the stream first.
+  if (liveOn) await sendStream(false, true);
+  albumWant = { name, until: Date.now() + 20000 };
+  const r = await act(btn, $("albumMsg"), "photo_get", { name }, (r) => albumLabel(name) + " · " + (r.bytes / 1024).toFixed(0) + " KB", { timeout: 20000 });
+  if (!r) albumWant = null;
+}
+function showAlbumPhoto(name, bytes) {
+  if (albumUrl) URL.revokeObjectURL(albumUrl);
+  const blob = new Blob([bytes], { type: "image/jpeg" });
+  albumUrl = URL.createObjectURL(blob);
+  $("albumImg").src = albumUrl;
+  $("albumName").textContent = albumLabel(name);
+  const a = $("albumSave");
+  a.href = albumUrl;
+  a.download = albumFile(name);
+  const file = new File([blob], albumFile(name), { type: "image/jpeg" });
+  const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+  const share = $("albumShare");
+  share.classList.toggle("hidden", !canShare);
+  share.onclick = () => navigator.share({ files: [file] }).catch(() => {});
+  $("albumViewer").classList.remove("hidden");
+}
+function closeAlbumViewer() {
+  $("albumViewer").classList.add("hidden");
+  $("albumImg").removeAttribute("src");
+  if (albumUrl) { URL.revokeObjectURL(albumUrl); albumUrl = null; }
+}
+$("albumClose").onclick = closeAlbumViewer;
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("albumViewer").classList.contains("hidden")) closeAlbumViewer(); });
 function setLiveUi(on) {
   liveOn = on;
   $("btnLive").classList.toggle("on", on);
