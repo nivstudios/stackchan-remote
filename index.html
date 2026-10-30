@@ -1401,6 +1401,19 @@ function handlePcEvent(ev) {
       addActivity("crash", (ev.app || "app") + (ev.kind === "hang" ? " stopped responding" : " crashed"), [ev.module, ev.exception].filter(Boolean).join(" "));
       log("PC app " + (ev.kind || "crash") + ": " + (ev.app || ""), "e");
       return;
+    case "pc_text":
+      // Text Max sends to the phone ("mandar pro celular"): shown in the clipboard box, ready to copy.
+      if (typeof ev.text !== "string" || !ev.text) return;
+      pcClipText = ev.text;
+      $("pcClipOut").value = ev.text;
+      $("pcClipInfo").textContent = "from Max · " + ev.text.length + " chars";
+      $("pcClipOutBox").classList.remove("hidden");
+      $("pcClipImg").removeAttribute("src");
+      $("pcClipImg").classList.add("hidden");
+      setMsg($("pcClipMsg"), "Max sent you text — tap Copy", "ok");
+      log("Max sent text (" + ev.text.length + " chars)", "o");
+      try { if (navigator.vibrate) navigator.vibrate(80); } catch (e) { /* ignore */ }
+      return;
   }
   log("PC event " + ev.ev + " " + JSON.stringify(ev).slice(0, 120));
 }
