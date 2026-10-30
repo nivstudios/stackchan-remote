@@ -47,7 +47,7 @@ main { max-width: 560px; margin: 0 auto; }
 .top { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 0 10px; border-bottom: 1px solid var(--hair); }
 .brand { font: 300 20px/1 var(--sans); letter-spacing: .32em; text-transform: uppercase; }
 .brand b { font-weight: 600; color: var(--accent); }
-.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--faint); border: 1px solid var(--faint); margin-top: 10px; }
+.chips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--faint); border: 1px solid var(--faint); margin-top: 10px; }
 .chip { background: var(--bg); padding: 8px 8px 7px; min-width: 0; }
 .chip .v { display: flex; align-items: center; gap: 6px; margin-top: 4px; font: 500 12px/1.2 var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
@@ -182,6 +182,45 @@ details > summary::after { content: "+"; font: 400 16px/1 var(--mono); color: va
 details[open] > summary::after { content: "\2212"; }
 .foot { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--hair); }
 .foot .mono { font-size: 11.5px; color: var(--dim); overflow-wrap: anywhere; }
+@media (min-width: 480px) { .chips { grid-template-columns: repeat(4, 1fr); } }
+
+/* Tabs */
+.tabs { display: flex; margin-top: 12px; border: 1px solid var(--hair); }
+.tabs button { flex: 1; border: 0; min-height: 44px; position: relative; color: var(--dim); }
+.tabs button + button { border-left: 1px solid var(--hair); }
+.tabs button.on { color: var(--accent); background: var(--accent-bg); }
+.tabs button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
+.tabs .badge { display: inline-block; min-width: 18px; margin-left: 8px; padding: 2px 5px; font: 500 10px/1.2 var(--mono); letter-spacing: 0; color: var(--bg); background: var(--warn); }
+
+/* Approval banner (sticky, both tabs) */
+.appr-banner { position: sticky; top: 0; z-index: 5; margin-top: 10px; padding: 10px; border: 1px solid var(--warn); border-left-width: 3px; background: #0E0D08; }
+.appr-banner .t { color: var(--warn); font-weight: 500; overflow-wrap: anywhere; cursor: pointer; }
+.appr-banner .d { color: var(--dim); font: 400 12px/1.4 var(--mono); margin-top: 4px; max-height: 4.2em; overflow: hidden; overflow-wrap: anywhere; white-space: pre-wrap; }
+.appr-banner .row { margin-top: 10px; }
+
+/* PC tab */
+.clip-out { background: #03060A; min-height: 92px; }
+.clip-img { display: block; max-width: 100%; margin-top: 8px; border: 1px solid var(--faint); }
+.icon-btn svg { width: 18px; height: 18px; vertical-align: middle; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.confirm { margin-top: 10px; padding: 10px; border: 1px dashed var(--warn); }
+.confirm .q { color: var(--warn); margin-bottom: 8px; }
+.countdown { margin-top: 10px; padding: 10px; border: 1px solid var(--err); display: flex; align-items: center; gap: 10px; }
+.countdown .n { font: 500 26px/1 var(--mono); color: var(--err); min-width: 52px; }
+.countdown .l { flex: 1; color: var(--fg); }
+.countdown button { flex: none; }
+.item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--faint); }
+.item:last-child { border-bottom: 0; }
+.item .body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.item .sub { font: 400 11.5px/1.4 var(--mono); color: var(--dim); margin-top: 3px; white-space: pre-wrap; max-height: 9em; overflow: auto; }
+.item .acts { display: flex; gap: 6px; flex: none; }
+.item .acts button { min-height: 40px; padding: 0 10px; }
+.st { flex: none; font: 500 10px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: 3px 6px; border: 1px solid var(--hair); color: var(--dim); margin-top: 2px; }
+.st.running, .st.queued { color: var(--accent); border-color: var(--accent-dim); }
+.st.waiting_approval { color: var(--warn); border-color: var(--warn); }
+.st.done { color: var(--ok); border-color: rgba(127, 217, 154, .5); }
+.st.failed, .st.cancelled { color: var(--err); border-color: rgba(229, 83, 75, .5); }
+.st.dl { color: var(--accent); } .st.crash { color: var(--err); border-color: rgba(229, 83, 75, .5); }
 .setup h1 { font: 300 26px/1.15 var(--sans); letter-spacing: .14em; text-transform: uppercase; margin: 22px 0 6px; }
 .setup p { color: var(--dim); margin: 0 0 14px; }
 .stack > * + * { margin-top: 10px; }
@@ -222,8 +261,21 @@ details[open] > summary::after { content: "\2212"; }
     <div class="chip" id="chipBroker"><div class="cap">Broker</div><div class="v"><span class="dot"></span><span>—</span></div></div>
     <div class="chip" id="chipRobot"><div class="cap">Robot</div><div class="v"><span class="dot"></span><span>—</span></div></div>
     <div class="chip" id="chipClock"><div class="cap">Clock</div><div class="v"><span class="dot"></span><span>—</span></div></div>
+    <div class="chip" id="chipPc"><div class="cap">PC</div><div class="v"><span class="dot"></span><span>—</span></div></div>
   </div>
   <div id="banner" class="banner hidden"></div>
+  <div class="tabs" role="tablist">
+    <button id="tabBtnRobot" role="tab" data-tab="robot" class="on">Robot</button>
+    <button id="tabBtnPc" role="tab" data-tab="pc">PC<span class="badge hidden" id="pcBadge"></span></button>
+  </div>
+  <div id="apprBanner" class="appr-banner hidden" role="alert">
+    <div class="cap" id="apprBannerCap">PC asks</div>
+    <div class="t" id="apprBannerTitle"></div>
+    <div class="d" id="apprBannerDetail"></div>
+    <div class="row"><button class="primary" id="apprBannerAllow">Allow</button><button class="danger" id="apprBannerDeny">Deny</button></div>
+  </div>
+
+  <div id="tabRobot">
 
   <!-- Camera -->
   <div class="card">
@@ -322,6 +374,95 @@ details[open] > summary::after { content: "\2212"; }
     <div id="statusGrid" class="kv"><div><div class="cap">—</div><div class="v">—</div></div></div>
     <div class="msg" id="statusMsg"></div>
   </div>
+  </div><!-- /tabRobot -->
+
+  <div id="tabPc" class="hidden">
+  <!-- Clipboard -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">01</span>Clipboard</div><div class="cap num" id="pcName"></div></div>
+    <button id="pcClipGet" class="primary" style="width:100%">Get PC clipboard</button>
+    <div id="pcClipOutBox" class="hidden" style="margin-top:10px">
+      <textarea id="pcClipOut" class="clip-out" readonly aria-label="PC clipboard text"></textarea>
+      <div class="meta"><span id="pcClipInfo"></span><span></span></div>
+      <button id="pcClipCopy" style="width:100%;margin-top:8px">Copy</button>
+    </div>
+    <img id="pcClipImg" class="clip-img hidden" alt="Image on the PC clipboard">
+    <div class="rule"></div>
+    <label class="cap" for="pcClipIn">Send text to the PC clipboard</label>
+    <textarea id="pcClipIn" maxlength="100000" placeholder="Paste or type here" autocapitalize="off" spellcheck="false"></textarea>
+    <button id="pcClipSet" style="width:100%;margin-top:8px">Send to PC</button>
+    <div class="msg" id="pcClipMsg"></div>
+  </div>
+
+  <!-- Link -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">02</span>Open link on PC</div></div>
+    <div class="row">
+      <input id="pcUrl" type="url" inputmode="url" placeholder="https://…" autocapitalize="off" spellcheck="false" style="flex:3">
+      <button id="pcUrlGo" class="primary">Open</button>
+    </div>
+    <div class="msg" id="pcUrlMsg"></div>
+  </div>
+
+  <!-- Media -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">03</span>Media &amp; volume</div></div>
+    <div class="grid g4" id="pcMedia">
+      <button class="icon-btn" data-key="prev" aria-label="Previous track"><svg viewBox="0 0 24 24"><path d="M6 5v14M19 5 9 12l10 7z"/></svg></button>
+      <button class="icon-btn" data-key="play_pause" aria-label="Play or pause"><svg viewBox="0 0 24 24"><path d="M5 5l8 7-8 7zM16 6v12M20 6v12"/></svg></button>
+      <button class="icon-btn" data-key="next" aria-label="Next track"><svg viewBox="0 0 24 24"><path d="M18 5v14M5 5l10 7-10 7z"/></svg></button>
+      <button class="icon-btn" data-key="mute" aria-label="Mute or unmute"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4zM16 9l5 6M21 9l-5 6"/></svg></button>
+    </div>
+    <div class="card-h" style="margin:10px 0 0"><label class="cap" for="pcVol">PC volume</label><span class="num" id="pcVolVal">—</span></div>
+    <input type="range" id="pcVol" min="0" max="100" step="1" value="50">
+    <button id="pcSaveClip" style="width:100%;margin-top:4px">Save game clip</button>
+    <div class="msg" id="pcMediaMsg"></div>
+  </div>
+
+  <!-- Power -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">04</span>Power</div></div>
+    <div class="grid g2" id="pcPower">
+      <button data-power="lock">Lock</button>
+      <button data-power="sleep">Sleep</button>
+      <button data-power="restart" class="warn">Restart</button>
+      <button data-power="shutdown" class="danger">Shut down</button>
+    </div>
+    <div class="confirm hidden" id="pcConfirm">
+      <div class="q" id="pcConfirmQ"></div>
+      <div class="row"><button class="danger" id="pcConfirmYes">Confirm</button><button id="pcConfirmNo">Back</button></div>
+    </div>
+    <div class="countdown hidden" id="pcCountdown">
+      <div class="n num" id="pcCountN">60</div>
+      <div class="l" id="pcCountL">Shutting down</div>
+      <button class="primary" id="pcCountCancel">Cancel</button>
+    </div>
+    <div class="msg" id="pcPowerMsg"></div>
+  </div>
+
+  <!-- Tasks -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">05</span>Tasks</div><button class="ghost" id="pcTaskRefresh">Refresh</button></div>
+    <textarea id="pcTaskIn" maxlength="4000" placeholder="Ask the PC to…" style="min-height:72px"></textarea>
+    <button id="pcTaskGo" class="primary" style="width:100%;margin-top:8px">Send task</button>
+    <div class="msg" id="pcTaskMsg"></div>
+    <div id="pcTaskList"><div class="empty">No tasks yet.</div></div>
+  </div>
+
+  <!-- Approvals -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">06</span>Approvals</div></div>
+    <div id="pcApprList"><div class="empty">Nothing waiting.</div></div>
+    <div class="msg" id="pcApprMsg"></div>
+  </div>
+
+  <!-- Activity -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">07</span>Activity</div><button class="ghost" id="pcRecap">Today</button></div>
+    <div class="msg" id="pcRecapMsg" style="margin-top:0"></div>
+    <div id="pcActivity"><div class="empty">Downloads and app crashes show up here.</div></div>
+  </div>
+  </div><!-- /tabPc -->
 
   <details class="card" id="logBox">
     <summary class="cap">Link log</summary>
@@ -418,7 +559,8 @@ async function deriveTopics(key) {
   const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", key));
   const hex = Array.from(digest.slice(0, 8), (b) => b.toString(16).padStart(2, "0")).join("");
   const base = "sc1/" + hex;
-  return { base, c: base + "/c", e: base + "/e", i: base + "/i" };
+  // pc / pe: the PC companion app's own command / event topics on the same channel.
+  return { base, c: base + "/c", e: base + "/e", i: base + "/i", pc: base + "/pc/c", pe: base + "/pc/e" };
 }
 async function seal(topic, plain, iv) {
   iv = iv || crypto.getRandomValues(new Uint8Array(12));
@@ -447,6 +589,12 @@ function log(text, cls) {
   const box = $("log");
   box.prepend(el);
   while (box.childElementCount > 60) box.lastChild.remove();
+}
+// Command args for the log line: long strings (clipboard text, tasks) are shortened.
+function logArgs(args) {
+  const o = {};
+  for (const [k, v] of Object.entries(args)) o[k] = typeof v === "string" && v.length > 40 ? v.slice(0, 40) + "… (" + v.length + ")" : v;
+  return JSON.stringify(o);
 }
 function setMsg(el, text, cls) {
   el.textContent = text || "";
@@ -486,12 +634,13 @@ function connect() {
     brokerUp = true;
     chip("chipBroker", "ok", "online");
     log("broker connected", "o");
-    client.subscribe([T.e, T.i], { qos: 0 }, (err) => {
+    client.subscribe([T.e, T.i, T.pe], { qos: 0 }, (err) => {
       if (err) { log("subscribe failed: " + err.message, "e"); return; }
       // ping() also pulls status and reminders once the robot answers.
       lastPing = Date.now();
       lastSeen = 0;
       ping();
+      pcPing();
       if (liveOn) sendStream(true, true);
     });
   });
@@ -512,11 +661,13 @@ async function onMessage(topic, data) {
     log("undecryptable message on " + topic.slice(-2), "w");
     return;
   }
-  lastSeen = Date.now();
-  updateRobotChip();
+  const isPc = topic === T.pe;
+  if (isPc) pcSeen();
+  else { lastSeen = Date.now(); updateRobotChip(); }
   if (topic === T.i) { showFrame(plain); return; }
   let msg;
-  try { msg = JSON.parse(dec.decode(plain)); } catch (e) { log("bad JSON from robot", "e"); return; }
+  try { msg = JSON.parse(dec.decode(plain)); } catch (e) { log("bad JSON from " + (isPc ? "PC" : "robot"), "e"); return; }
+  if (isPc && msg.re === undefined) { if (msg.ev) handlePcEvent(msg); return; }
   if (msg.re !== undefined) {
     const p = pending.get(msg.re);
     if (p) {
@@ -527,7 +678,7 @@ async function onMessage(topic, data) {
     } else {
       log("← reply for unknown id " + msg.re + (msg.ok ? " ok" : " ERROR " + (msg.error || "")), msg.ok ? "" : "e");
     }
-    if (typeof msg.time_synced === "boolean") setSynced(msg.time_synced);
+    if (!isPc && typeof msg.time_synced === "boolean") setSynced(msg.time_synced);
     return;
   }
   if (msg.ev) handleEvent(msg);
@@ -539,17 +690,18 @@ function send(cmd, args, opts) {
     if (!client || !brokerUp) { reject(new Error("not connected to broker")); return; }
     const id = newId();
     const msg = Object.assign({}, args || {}, { id, ts: Date.now(), cmd });
+    const topic = opts.pc ? T.pc : T.c;
     let payload;
-    try { payload = await seal(T.c, enc.encode(JSON.stringify(msg))); } catch (e) { reject(e); return; }
+    try { payload = await seal(topic, enc.encode(JSON.stringify(msg))); } catch (e) { reject(e); return; }
     const timer = setTimeout(() => {
       pending.delete(id);
       if (!opts.quiet) log("✕ " + cmd + " timed out", "w");
-      reject(new Error("no reply from robot (timeout)"));
+      reject(new Error(opts.pc ? "no reply from PC (timeout) — is it on and running stackchan-suite?" : "no reply from robot (timeout)"));
     }, opts.timeout || 8000);
     pending.set(id, { resolve, reject, timer, cmd, quiet: opts.quiet });
-    lastSealed = payload;
-    if (!opts.quiet) log("→ " + cmd + (args && Object.keys(args).length ? " " + JSON.stringify(args) : ""));
-    client.publish(T.c, payload, { qos: 0 }, (err) => {
+    if (!opts.pc) lastSealed = payload;
+    if (!opts.quiet) log("→ " + (opts.pc ? "PC " : "") + cmd + (args && Object.keys(args).length ? " " + logArgs(args) : ""));
+    client.publish(topic, payload, { qos: 0 }, (err) => {
       if (err) { clearTimeout(timer); pending.delete(id); reject(err); }
     });
   });
@@ -605,7 +757,8 @@ function ping() {
 setInterval(() => {
   if (!cfg) return;
   updateRobotChip();
-  if (brokerUp && document.visibilityState === "visible" && Date.now() - lastPing >= PING_EVERY_MS) { lastPing = Date.now(); ping(); }
+  if (brokerUp && document.visibilityState === "visible" && Date.now() - lastPing >= PING_EVERY_MS) { lastPing = Date.now(); ping(); pcPing(); }
+  pcTick();
   if (lastFrameAt) $("camAge").textContent = fmtAge(Math.round((Date.now() - lastFrameAt) / 1000));
 }, 1000);
 let lastPing = 0;
@@ -659,6 +812,7 @@ document.addEventListener("visibilitychange", () => {
   } else if (document.visibilityState === "visible" && brokerUp) {
     lastPing = Date.now();
     ping();
+    pcPing();
   }
 });
 
@@ -938,6 +1092,336 @@ function handleEvent(ev) {
   log("event " + ev.ev + " " + JSON.stringify(ev).slice(0, 120));
 }
 
+// ---------- PC (stackchan-suite on the PC, topics <base>/pc/c and <base>/pc/e) ----------
+const STORE_TAB = "scRemote.tab";
+const PC_ONLINE_MS = 45000;
+let pcLastSeen = 0, pcOffline = false, pcWasOnline = false;
+const pcApprovals = new Map();   // request_id -> {request_id, title, detail, expires_at}
+const pcTasks = new Map();       // task_id -> task
+let pcCountdownEnd = 0, pcCountdownMode = null;
+
+function pcAct(btn, msgEl, cmd, args, okText, opts) { return act(btn, msgEl, cmd, args, okText, Object.assign({ pc: true }, opts || {})); }
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+
+function pcSeen() {
+  pcLastSeen = Date.now();
+  pcOffline = false;
+  updatePcChip();
+}
+function updatePcChip() {
+  const online = pcLastSeen && Date.now() - pcLastSeen < PC_ONLINE_MS;
+  if (online) chip("chipPc", "ok", "online");
+  else if (pcOffline || pcLastSeen) chip("chipPc", "err", "offline");
+  else chip("chipPc", brokerUp ? "warn" : "", brokerUp ? "waiting" : "—");
+  if (online && !pcWasOnline) pcTaskRefresh(true);
+  pcWasOnline = !!online;
+}
+function pcPing() {
+  if (!brokerUp) return;
+  send("pc_ping", {}, { pc: true, quiet: true, timeout: 6000 })
+    .then(applyPcInfo)
+    .catch(() => { if (!pcLastSeen || Date.now() - pcLastSeen > PC_ONLINE_MS) { pcOffline = true; updatePcChip(); } });
+}
+function fmtUptime(s) {
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+  return (d ? d + "d " : "") + (d || h ? h + "h " : "") + m + "m";
+}
+function applyPcInfo(r) {
+  if (typeof r.name === "string") $("pcName").textContent = r.name + (typeof r.uptime_s === "number" ? " · app up " + fmtUptime(r.uptime_s) : "");
+  if (typeof r.volume === "number" && document.activeElement !== $("pcVol")) { $("pcVol").value = r.volume; paintPcVol(r.volume); }
+  if (r.shutdown && typeof r.shutdown.seconds_left === "number") startCountdown(r.shutdown.mode, r.shutdown.seconds_left);
+  else if (r.shutdown === null && pcCountdownEnd) stopCountdown();
+  if (Array.isArray(r.approvals)) {
+    const live = new Set(r.approvals.map((a) => a.request_id));
+    for (const id of [...pcApprovals.keys()]) if (!live.has(id)) pcApprovals.delete(id);
+    for (const a of r.approvals) pcApprovals.set(a.request_id, a);
+    renderApprovals();
+  }
+}
+
+// Tabs
+function showTab(name) {
+  const pc = name === "pc";
+  $("tabRobot").classList.toggle("hidden", pc);
+  $("tabPc").classList.toggle("hidden", !pc);
+  $("tabBtnRobot").classList.toggle("on", !pc);
+  $("tabBtnPc").classList.toggle("on", pc);
+  $("tabBtnRobot").setAttribute("aria-selected", String(!pc));
+  $("tabBtnPc").setAttribute("aria-selected", String(pc));
+  store("set", STORE_TAB, pc ? "pc" : "robot");
+  if (pc && cfg && brokerUp) pcPing();
+}
+$("tabBtnRobot").onclick = () => showTab("robot");
+$("tabBtnPc").onclick = () => showTab("pc");
+
+// Clipboard
+let pcClipText = "";
+$("pcClipGet").onclick = async () => {
+  const r = await pcAct($("pcClipGet"), $("pcClipMsg"), "clip_get", {}, (r) =>
+    r.text != null ? "clipboard: " + r.chars + " chars" + (r.truncated ? " (truncated)" : "")
+      : r.image_png_b64 ? "clipboard holds an image" : r.image_too_large ? "clipboard image too large to send" : "PC clipboard has no text");
+  if (!r) return;
+  const img = $("pcClipImg");
+  if (r.text != null) {
+    pcClipText = r.text;
+    $("pcClipOut").value = r.text;
+    $("pcClipInfo").textContent = r.text.length + " chars" + (r.truncated ? " of " + r.chars : "");
+    $("pcClipOutBox").classList.remove("hidden");
+  } else {
+    pcClipText = "";
+    $("pcClipOutBox").classList.add("hidden");
+  }
+  if (r.image_png_b64) { img.src = "data:image/png;base64," + r.image_png_b64; img.classList.remove("hidden"); }
+  else { img.removeAttribute("src"); img.classList.add("hidden"); }
+};
+$("pcClipCopy").onclick = () => {
+  const text = pcClipText;
+  const fallback = () => {
+    const ta = $("pcClipOut");
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    setMsg($("pcClipMsg"), ok ? "copied" : "selected — use your phone's Copy", ok ? "ok" : "warn");
+  };
+  // writeText must start inside the click handler (user activation).
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => setMsg($("pcClipMsg"), "copied to this phone", "ok"), fallback);
+  } else fallback();
+};
+$("pcClipSet").onclick = async () => {
+  const text = $("pcClipIn").value;
+  if (!text) { setMsg($("pcClipMsg"), "nothing to send", "warn"); return; }
+  const r = await pcAct($("pcClipSet"), $("pcClipMsg"), "clip_set", { text }, (r) => "sent " + r.chars + " chars to the PC clipboard", { timeout: 15000 });
+  if (r) $("pcClipIn").value = "";
+};
+
+// Link
+function normalizeUrl(v) {
+  v = (v || "").trim();
+  if (!v) throw new Error("type a link");
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(v)) v = "https://" + v;
+  let u;
+  try { u = new URL(v); } catch (e) { throw new Error("not a valid link"); }
+  if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("only http and https links");
+  return u.href;
+}
+$("pcUrlGo").onclick = async () => {
+  let url;
+  try { url = normalizeUrl($("pcUrl").value); } catch (e) { setMsg($("pcUrlMsg"), e.message, "warn"); return; }
+  const r = await pcAct($("pcUrlGo"), $("pcUrlMsg"), "open_url", { url }, "opened on the PC");
+  if (r) $("pcUrl").value = "";
+};
+$("pcUrl").addEventListener("keydown", (e) => { if (e.key === "Enter") $("pcUrlGo").click(); });
+
+// Media + volume
+$("pcMedia").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-key]");
+  if (b) pcAct(b, $("pcMediaMsg"), "media", { key: b.dataset.key }, b.getAttribute("aria-label").toLowerCase());
+});
+function paintPcVol(v) { $("pcVol").style.setProperty("--pct", v + "%"); $("pcVolVal").textContent = v; }
+let pcVolTimer = null;
+$("pcVol").addEventListener("input", (e) => {
+  paintPcVol(e.target.value);
+  clearTimeout(pcVolTimer);
+  pcVolTimer = setTimeout(() => pcAct(null, $("pcMediaMsg"), "volume", { level: parseInt($("pcVol").value, 10) },
+    (r) => { paintPcVol(r.volume); return "PC volume " + r.volume; }), 350);
+});
+$("pcSaveClip").onclick = () => pcAct($("pcSaveClip"), $("pcMediaMsg"), "save_clip", {}, (r) => "sent " + r.hotkey);
+
+// Power (inline confirm, then countdown for shutdown / restart)
+const POWER = {
+  lock: { q: "Lock the PC?", cmd: "lock", args: {}, ok: "PC locked" },
+  sleep: { q: "Put the PC to sleep? You can wake it from the robot tab.", cmd: "sleep", args: {}, ok: "PC going to sleep" },
+  restart: { q: "Restart the PC? It restarts after a 60 s countdown you can cancel.", cmd: "shutdown", args: { mode: "restart" }, ok: "restart scheduled" },
+  shutdown: { q: "Shut down the PC? It shuts down after a 60 s countdown you can cancel.", cmd: "shutdown", args: { mode: "shutdown" }, ok: "shutdown scheduled" },
+};
+let pcPowerPending = null;
+function closeConfirm() { pcPowerPending = null; $("pcConfirm").classList.add("hidden"); }
+$("pcPower").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-power]");
+  if (!b) return;
+  pcPowerPending = b.dataset.power;
+  $("pcConfirmQ").textContent = POWER[pcPowerPending].q;
+  $("pcConfirmYes").textContent = b.textContent;
+  $("pcConfirm").classList.remove("hidden");
+});
+$("pcConfirmNo").onclick = closeConfirm;
+$("pcConfirmYes").onclick = async () => {
+  const p = POWER[pcPowerPending];
+  if (!p) return;
+  closeConfirm();
+  const r = await pcAct($("pcConfirmYes"), $("pcPowerMsg"), p.cmd, p.args, p.ok);
+  if (r && p.cmd === "shutdown") startCountdown(r.mode, r.seconds);
+};
+function startCountdown(mode, seconds) {
+  pcCountdownMode = mode;
+  pcCountdownEnd = Date.now() + Math.max(0, seconds) * 1000;
+  $("pcCountL").textContent = mode === "restart" ? "Restarting the PC" : "Shutting down the PC";
+  $("pcCountdown").classList.remove("hidden");
+  pcTick();
+}
+function stopCountdown() { pcCountdownEnd = 0; $("pcCountdown").classList.add("hidden"); }
+$("pcCountCancel").onclick = async () => {
+  const r = await pcAct($("pcCountCancel"), $("pcPowerMsg"), "shutdown_cancel", {}, (r) => r.cancelled ? "cancelled" : "nothing was scheduled");
+  if (r) stopCountdown();
+};
+
+// Tasks
+function renderTasks() {
+  const box = $("pcTaskList");
+  box.textContent = "";
+  const list = [...pcTasks.values()].sort((a, b) => (b.updated || b.created || 0) - (a.updated || a.created || 0));
+  if (!list.length) { box.appendChild(el("div", "empty", "No tasks yet.")); return; }
+  for (const t of list.slice(0, 20)) {
+    const row = el("div", "item");
+    const st = String(t.status || "?");
+    row.appendChild(el("span", "st " + st.replace(/[^a-z_]/g, ""), st.replace(/_/g, " ")));
+    const body = el("div", "body", t.title || t.text || t.task_id);
+    const sub = t.error || t.result || (t.title && t.text ? t.text : "");
+    if (sub) body.appendChild(el("div", "sub", sub));
+    row.appendChild(body);
+    box.appendChild(row);
+  }
+}
+function upsertTask(t) {
+  if (!t || typeof t.task_id !== "string") return;
+  pcTasks.set(t.task_id, Object.assign(pcTasks.get(t.task_id) || {}, t));
+  renderTasks();
+}
+async function pcTaskRefresh(quiet) {
+  const r = await pcAct(quiet ? null : $("pcTaskRefresh"), $("pcTaskMsg"), "task_list", {}, (r) => (r.tasks || []).length + " task(s)", { quiet });
+  if (r && Array.isArray(r.tasks)) { pcTasks.clear(); r.tasks.forEach(upsertTask); renderTasks(); if (quiet) setMsg($("pcTaskMsg"), ""); }
+}
+$("pcTaskRefresh").onclick = () => pcTaskRefresh();
+$("pcTaskGo").onclick = async () => {
+  const text = $("pcTaskIn").value.trim();
+  if (!text) { setMsg($("pcTaskMsg"), "describe the task", "warn"); return; }
+  const r = await pcAct($("pcTaskGo"), $("pcTaskMsg"), "task_submit", { text }, (r) => "task " + r.task_id + " queued", { timeout: 15000 });
+  if (r) {
+    $("pcTaskIn").value = "";
+    if (!pcTasks.has(r.task_id)) upsertTask({ task_id: r.task_id, text, status: "queued", created: Date.now() });
+  }
+};
+
+// Approvals
+function renderApprovals() {
+  const box = $("pcApprList");
+  box.textContent = "";
+  const list = [...pcApprovals.values()];
+  const badge = $("pcBadge");
+  badge.textContent = String(list.length);
+  badge.classList.toggle("hidden", !list.length);
+  if (!list.length) box.appendChild(el("div", "empty", "Nothing waiting."));
+  for (const a of list) {
+    const row = el("div", "item");
+    const body = el("div", "body", a.title || "Approval");
+    if (a.detail) body.appendChild(el("div", "sub", a.detail));
+    const left = el("div", "sub", "");
+    left.dataset.expires = a.expires_at || "";
+    body.appendChild(left);
+    const acts = el("div", "acts");
+    const yes = el("button", "primary", "Allow");
+    const no = el("button", "danger", "Deny");
+    yes.onclick = () => answerApproval(a.request_id, true, yes);
+    no.onclick = () => answerApproval(a.request_id, false, no);
+    acts.append(yes, no);
+    row.append(body, acts);
+    box.appendChild(row);
+  }
+  const first = list[0];
+  $("apprBanner").classList.toggle("hidden", !first);
+  if (first) {
+    $("apprBannerCap").textContent = "PC asks" + (list.length > 1 ? " · 1 of " + list.length : "");
+    $("apprBannerTitle").textContent = first.title || "Approval";
+    $("apprBannerDetail").textContent = first.detail || "";
+    $("apprBannerAllow").onclick = () => answerApproval(first.request_id, true, $("apprBannerAllow"));
+    $("apprBannerDeny").onclick = () => answerApproval(first.request_id, false, $("apprBannerDeny"));
+  }
+  pcTick();
+}
+$("apprBannerTitle").onclick = () => showTab("pc");
+async function answerApproval(id, allow, btn) {
+  const r = await pcAct(btn, $("pcApprMsg"), "approve", { request_id: id, allow }, (r) => r.resolved ? (allow ? "allowed" : "denied") : "already answered or expired");
+  if (r) { pcApprovals.delete(id); renderApprovals(); }
+}
+
+// Activity (download_done / app_crash events, recap)
+const pcActivity = [];
+function addActivity(kind, title, sub) {
+  pcActivity.unshift({ kind, title, sub, at: new Date() });
+  pcActivity.length = Math.min(pcActivity.length, 20);
+  const box = $("pcActivity");
+  box.textContent = "";
+  for (const a of pcActivity) {
+    const row = el("div", "item");
+    row.appendChild(el("span", "st " + kind, kind === "dl" ? "download" : kind === "crash" ? "crash" : kind));
+    const body = el("div", "body", a.title);
+    body.appendChild(el("div", "sub", pad2(a.at.getHours()) + ":" + pad2(a.at.getMinutes()) + (a.sub ? " · " + a.sub : "")));
+    row.appendChild(body);
+    box.appendChild(row);
+  }
+}
+$("pcRecap").onclick = () => pcAct($("pcRecap"), $("pcRecapMsg"), "recap", {}, (r) => r.text || "no activity");
+
+function handlePcEvent(ev) {
+  switch (ev.ev) {
+    case "pc_status":
+      if (ev.online === false) { pcLastSeen = 0; pcOffline = true; updatePcChip(); log("PC went offline" + (ev.reason ? " (" + ev.reason + ")" : ""), "w"); }
+      else applyPcInfo(ev);
+      return;
+    case "pc_power":
+      if (ev.state === "countdown") startCountdown(ev.mode, typeof ev.seconds === "number" ? ev.seconds : 60);
+      else if (ev.state === "cancelled") { stopCountdown(); setMsg($("pcPowerMsg"), "shutdown cancelled", "ok"); }
+      else if (ev.state === "sleeping") setMsg($("pcPowerMsg"), "PC is going to sleep", "warn");
+      else if (ev.state === "error") setMsg($("pcPowerMsg"), (ev.action || "power") + " failed: " + (ev.error || ""), "err");
+      log("PC power: " + ev.state);
+      return;
+    case "pc_task":
+      upsertTask(ev);
+      log("PC task " + ev.task_id + ": " + ev.status);
+      return;
+    case "approval_request":
+      if (typeof ev.request_id !== "string") return;
+      pcApprovals.set(ev.request_id, { request_id: ev.request_id, title: ev.title, detail: ev.detail, expires_at: ev.expires_at });
+      renderApprovals();
+      log("PC asks: " + (ev.title || ""), "w");
+      try { if (navigator.vibrate) navigator.vibrate([120, 60, 120]); } catch (e) { /* ignore */ }
+      return;
+    case "approval_resolved":
+      if (pcApprovals.delete(ev.request_id)) renderApprovals();
+      log("approval " + (ev.allow ? "allowed" : "denied") + (ev.by ? " by " + ev.by : ""));
+      return;
+    case "download_done":
+      addActivity("dl", ev.name || "download", typeof ev.size_mb === "number" ? ev.size_mb + " MB" : "");
+      log("PC download finished: " + (ev.name || ""), "o");
+      return;
+    case "app_crash":
+      addActivity("crash", (ev.app || "app") + (ev.kind === "hang" ? " stopped responding" : " crashed"), [ev.module, ev.exception].filter(Boolean).join(" "));
+      log("PC app " + (ev.kind || "crash") + ": " + (ev.app || ""), "e");
+      return;
+  }
+  log("PC event " + ev.ev + " " + JSON.stringify(ev).slice(0, 120));
+}
+
+// 1 s tick: chip, countdown, approval expiry.
+function pcTick() {
+  updatePcChip();
+  if (pcCountdownEnd) {
+    const left = Math.max(0, Math.round((pcCountdownEnd - Date.now()) / 1000));
+    $("pcCountN").textContent = left;
+    if (left === 0 && Date.now() - pcCountdownEnd > 10000) stopCountdown();
+  }
+  let changed = false;
+  for (const [id, a] of pcApprovals) if (a.expires_at && Date.now() > a.expires_at + 5000) { pcApprovals.delete(id); changed = true; }
+  if (changed) renderApprovals();
+  document.querySelectorAll("#pcApprList [data-expires]").forEach((n) => {
+    const exp = parseInt(n.dataset.expires, 10);
+    n.textContent = exp ? "expires in " + Math.max(0, Math.round((exp - Date.now()) / 1000)) + " s" : "";
+  });
+}
+
 // ---------- footer ----------
 function linkUrl() { return location.href.split("#")[0] + "#" + fragmentFor(cfg); }
 $("btnCopy").onclick = async () => {
@@ -980,8 +1464,11 @@ async function start(c) {
   $("footInfo").textContent = T.base + " · " + c.broker + ":" + c.port + (saved ? "" : " · not saved (storage off)");
   chip("chipRobot", "", "—");
   chip("chipClock", "", "unknown");
+  chip("chipPc", "", "—");
   resetRemAt();
   paintVol(50);
+  paintPcVol(50);
+  showTab(store("get", STORE_TAB) === "pc" ? "pc" : "robot");
   drawPad();
   connect();
 }
