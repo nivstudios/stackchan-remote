@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05080A">
+<meta name="referrer" content="no-referrer">
+<title>StackChan Remote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<style>
+:root {
+  --bg: #05080A;
+  --panel: #091014;
+  --fg: #DDE3E6;
+  --dim: rgba(221, 227, 230, .56);
+  --faint: rgba(221, 227, 230, .13);
+  --hair: rgba(221, 227, 230, .22);
+  --accent: #7FD8E8;
+  --accent-dim: rgba(127, 216, 232, .55);
+  --accent-bg: rgba(127, 216, 232, .09);
+  --warn: #E8B04B;
+  --ok: #7FD99A;
+  --err: #E5534B;
+  --sans: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body {
+  font: 400 15px/1.45 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+}
+main { max-width: 560px; margin: 0 auto; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.cap {
+  font: 500 10.5px/1.2 var(--sans); letter-spacing: .24em; text-transform: uppercase; color: var(--dim);
+}
+.hidden { display: none !important; }
+
+/* Header */
+.top { display: flex; align-items: baseline; justify-content: space-between; padding: 6px 0 10px; border-bottom: 1px solid var(--hair); }
+.brand { font: 300 20px/1 var(--sans); letter-spacing: .32em; text-transform: uppercase; }
+.brand b { font-weight: 600; color: var(--accent); }
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--faint); border: 1px solid var(--faint); margin-top: 10px; }
+.chip { background: var(--bg); padding: 8px 8px 7px; min-width: 0; }
+.chip .v { display: flex; align-items: center; gap: 6px; margin-top: 4px; font: 500 12px/1.2 var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
+.s-ok .dot { background: var(--ok); box-shadow: 0 0 8px rgba(127, 217, 154, .6); }
+.s-warn .dot { background: var(--warn); }
+.s-err .dot { background: var(--err); }
+.s-ok .v { color: var(--ok); } .s-warn .v { color: var(--warn); } .s-err .v { color: var(--err); }
+.banner { margin-top: 10px; padding: 8px 10px; border-left: 2px solid var(--warn); background: rgba(232, 176, 75, .07); color: var(--warn); font-size: 13px; }
+.banner.err { border-color: var(--err); background: rgba(229, 83, 75, .08); color: var(--err); }
+
+/* Cards with thin corner brackets */
+.card {
+  position: relative; margin: 14px 0; padding: 14px 14px 12px; border: 1px solid var(--faint);
+  background:
+    linear-gradient(var(--accent-dim), var(--accent-dim)) top left / 12px 1px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) top left / 1px 12px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) top right / 12px 1px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) top right / 1px 12px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) bottom left / 12px 1px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) bottom left / 1px 12px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) bottom right / 12px 1px no-repeat,
+    linear-gradient(var(--accent-dim), var(--accent-dim)) bottom right / 1px 12px no-repeat,
+    var(--panel);
+}
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.card-h .idx { color: var(--accent); margin-right: 8px; }
+.msg { min-height: 18px; margin-top: 8px; font: 400 12px/1.4 var(--mono); color: var(--dim); overflow-wrap: anywhere; }
+.msg.ok { color: var(--ok); } .msg.err { color: var(--err); } .msg.warn { color: var(--warn); }
+.rule { height: 1px; background: var(--faint); margin: 12px 0; }
+
+/* Buttons */
+button, .btn {
+  appearance: none; font: 500 12.5px/1 var(--sans); letter-spacing: .18em; text-transform: uppercase;
+  color: var(--fg); background: transparent; border: 1px solid var(--hair); border-radius: 0;
+  min-height: 46px; padding: 0 12px; cursor: pointer; touch-action: manipulation; user-select: none;
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:active { background: var(--accent-bg); border-color: var(--accent); }
+button:disabled { opacity: .4; cursor: default; }
+button.primary { border-color: var(--accent); color: var(--accent); }
+button.on { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
+button.warn { border-color: var(--warn); color: var(--warn); }
+button.danger { border-color: var(--err); color: var(--err); }
+button.busy { color: var(--dim); border-style: dashed; }
+button.ghost { min-height: 34px; padding: 0 10px; font-size: 11px; border-color: var(--faint); color: var(--dim); }
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1 1 0; min-width: 0; }
+.grid { display: grid; gap: 8px; }
+.g2 { grid-template-columns: repeat(2, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g5 { grid-template-columns: repeat(5, 1fr); }
+
+input, textarea, select {
+  font: 400 15px/1.3 var(--sans); color: var(--fg); background: #03060A; border: 1px solid var(--hair);
+  border-radius: 0; padding: 11px 10px; width: 100%; min-height: 46px; outline: none;
+}
+input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+textarea { font-family: var(--mono); font-size: 13px; resize: vertical; min-height: 92px; }
+input[type="datetime-local"] { font-family: var(--mono); font-size: 14px; }
+label.cap { display: block; margin: 0 0 6px; }
+
+/* Camera */
+.view { position: relative; aspect-ratio: 4 / 3; background: #000; border: 1px solid var(--faint); overflow: hidden; }
+.view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.view .nosig { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.view .corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent-dim); border-style: solid; pointer-events: none; }
+.view .tl { top: 8px; left: 8px; border-width: 1px 0 0 1px; } .view .tr { top: 8px; right: 8px; border-width: 1px 1px 0 0; }
+.view .bl { bottom: 8px; left: 8px; border-width: 0 0 1px 1px; } .view .br { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+.view .live { position: absolute; top: 12px; right: 34px; font: 500 10px/1 var(--mono); letter-spacing: .2em; color: var(--err); }
+.view .live::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--err); animation: blink 1.2s infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.meta { display: flex; justify-content: space-between; margin-top: 6px; font: 400 11px/1.3 var(--mono); color: var(--dim); }
+.seg { display: flex; border: 1px solid var(--hair); }
+.seg button { border: 0; min-height: 44px; flex: 1; padding: 0 6px; }
+.seg button + button { border-left: 1px solid var(--hair); }
+
+/* Head pad */
+.pad {
+  position: relative; aspect-ratio: 2 / 1; border: 1px solid var(--hair); touch-action: none; cursor: crosshair;
+  background:
+    linear-gradient(var(--faint), var(--faint)) center / 1px 100% no-repeat,
+    linear-gradient(var(--faint), var(--faint)) center / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 calc(12.5% - 1px), rgba(221,227,230,.05) calc(12.5% - 1px) 12.5%),
+    repeating-linear-gradient(0deg, transparent 0 calc(25% - 1px), rgba(221,227,230,.05) calc(25% - 1px) 25%),
+    #03060A;
+}
+.pad .tgt, .pad .act { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; pointer-events: none; }
+.pad .tgt { border: 1px solid var(--accent); box-shadow: 0 0 0 4px var(--accent-bg); }
+.pad .tgt::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; background: var(--accent); border-radius: 50%; }
+.pad .act { width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 1px solid var(--warn); opacity: .9; }
+.pad .lbl { position: absolute; font: 400 10px/1 var(--mono); color: var(--dim); pointer-events: none; }
+.readout { display: flex; justify-content: space-between; margin-top: 6px; font: 400 12px/1.3 var(--mono); }
+.readout span b { color: var(--accent); font-weight: 500; }
+.nudge { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 46px); gap: 8px; margin-top: 10px; }
+.nudge button { min-height: 0; font-size: 18px; letter-spacing: 0; }
+
+/* Faces, LEDs */
+.faces { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.faces button { padding: 0 4px; font-size: 11px; letter-spacing: .1em; }
+.swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.sw { position: relative; min-height: 46px; padding: 0; }
+.sw i { position: absolute; inset: 9px; display: block; }
+.sw.custom { overflow: hidden; }
+.sw.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; padding: 0; min-height: 0; border: 0; }
+
+/* Volume */
+input[type="range"] { -webkit-appearance: none; appearance: none; padding: 0; height: 46px; border: 0; background: transparent; }
+input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: linear-gradient(90deg, var(--accent) var(--pct, 50%), var(--hair) var(--pct, 50%)); }
+input[type="range"]::-moz-range-track { height: 2px; background: var(--hair); }
+input[type="range"]::-moz-range-progress { height: 2px; background: var(--accent); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -10px; background: var(--bg); border: 1px solid var(--accent); border-radius: 50%; }
+input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: var(--bg); border: 1px solid var(--accent); border-radius: 50%; }
+
+/* Lists */
+.kv { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--faint); border: 1px solid var(--faint); }
+.kv > div { background: var(--panel); padding: 8px 10px; min-width: 0; }
+.kv .v { font: 500 14px/1.3 var(--mono); margin-top: 3px; overflow-wrap: anywhere; }
+.battery { height: 6px; border: 1px solid var(--hair); margin-top: 6px; }
+.battery i { display: block; height: 100%; background: var(--ok); }
+.rem { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--faint); }
+.rem:last-child { border-bottom: 0; }
+.rem .when { font: 500 12px/1.3 var(--mono); color: var(--accent); flex: none; width: 104px; }
+.rem .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.rem button { min-height: 40px; width: 44px; flex: none; padding: 0; letter-spacing: 0; font-size: 16px; }
+.empty { color: var(--dim); font-size: 13px; padding: 6px 0; }
+.log { max-height: 220px; overflow: auto; font: 400 11px/1.5 var(--mono); color: var(--dim); margin-top: 8px; }
+.log div { white-space: pre-wrap; overflow-wrap: anywhere; border-bottom: 1px solid rgba(221,227,230,.05); padding: 2px 0; }
+.log .e { color: var(--err); } .log .o { color: var(--fg); } .log .w { color: var(--warn); }
+details > summary { list-style: none; cursor: pointer; min-height: 30px; display: flex; align-items: center; justify-content: space-between; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::after { content: "+"; font: 400 16px/1 var(--mono); color: var(--accent); }
+details[open] > summary::after { content: "\2212"; }
+.foot { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.foot .mono { font-size: 11.5px; color: var(--dim); overflow-wrap: anywhere; }
+.setup h1 { font: 300 26px/1.15 var(--sans); letter-spacing: .14em; text-transform: uppercase; margin: 22px 0 6px; }
+.setup p { color: var(--dim); margin: 0 0 14px; }
+.stack > * + * { margin-top: 10px; }
+</style>
+</head>
+<body>
+<main>
+
+<!-- Setup: shown when no key is known -->
+<section id="setup" class="setup hidden">
+  <div class="top"><div class="brand">Stack<b>chan</b></div><div class="cap">Remote link v1</div></div>
+  <h1>Pair with your robot</h1>
+  <p>Paste the remote link the robot gave you (it contains the key after <span class="mono">#k=</span>), or just the key. The key never leaves this phone except to encrypt commands.</p>
+  <div class="card stack">
+    <div>
+      <label class="cap" for="setupLink">Link or key</label>
+      <textarea id="setupLink" placeholder="https://…/index.html#k=…&amp;b=broker.hivemq.com" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+    </div>
+    <div class="row">
+      <div style="flex:2"><label class="cap" for="setupBroker">Broker</label><input id="setupBroker" value="broker.hivemq.com" autocapitalize="off" spellcheck="false"></div>
+      <div><label class="cap" for="setupPort">WSS port</label><input id="setupPort" class="mono" inputmode="numeric" value="8884"></div>
+    </div>
+    <button id="setupGo" class="primary" style="width:100%">Connect</button>
+    <div id="setupMsg" class="msg"></div>
+  </div>
+  <details class="card">
+    <summary class="cap">New key (rotate)</summary>
+    <p style="margin-top:10px">Generates a fresh random key on this phone. Configure the robot with it (key + broker), then open the link below. Anyone with the link can control the robot.</p>
+    <button id="genKey" style="width:100%">Generate key</button>
+    <div id="genOut" class="msg mono"></div>
+  </details>
+</section>
+
+<!-- Remote -->
+<section id="app" class="hidden">
+  <div class="top"><div class="brand">Stack<b>chan</b></div><div class="cap">Remote link</div></div>
+  <div class="chips">
+    <div class="chip" id="chipBroker"><div class="cap">Broker</div><div class="v"><span class="dot"></span><span>—</span></div></div>
+    <div class="chip" id="chipRobot"><div class="cap">Robot</div><div class="v"><span class="dot"></span><span>—</span></div></div>
+    <div class="chip" id="chipClock"><div class="cap">Clock</div><div class="v"><span class="dot"></span><span>—</span></div></div>
+  </div>
+  <div id="banner" class="banner hidden"></div>
+
+  <!-- Camera -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">01</span>Camera</div><div class="cap num" id="camFps"></div></div>
+    <div class="view">
+      <img id="camImg" alt="Latest camera frame" class="hidden">
+      <div class="nosig" id="camNone"><div><div class="cap">No signal</div><div class="cap" style="margin-top:6px;letter-spacing:.14em">Snapshot or go live</div></div></div>
+      <div class="live hidden" id="camLive">LIVE</div>
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    </div>
+    <div class="meta"><span id="camInfo">—</span><span id="camAge"></span></div>
+    <div class="row" style="margin-top:10px">
+      <button id="btnSnap" class="primary">Snapshot</button>
+      <button id="btnLive">Live</button>
+      <div class="seg" id="fpsSeg" style="flex:0 0 112px"><button data-fps="1" class="on">1</button><button data-fps="2">2</button></div>
+    </div>
+    <div class="msg" id="camMsg"></div>
+  </div>
+
+  <!-- Head -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">02</span>Head</div><button class="ghost" id="btnFlip" title="Swap left/right">Flip X</button></div>
+    <div class="pad" id="pad">
+      <span class="lbl" style="left:6px;top:6px">88°</span><span class="lbl" style="left:6px;bottom:6px">0°</span>
+      <span class="lbl" style="right:6px;bottom:6px" id="padRight">−90°</span>
+      <div class="act" id="padAct"></div><div class="tgt" id="padTgt"></div>
+    </div>
+    <div class="readout"><span>YAW <b id="roYaw">+0</b></span><span class="cap" style="align-self:center">target / <span style="color:var(--warn)">robot</span></span><span>PITCH <b id="roPitch">45</b></span></div>
+    <div class="nudge">
+      <span></span><button data-n="0,8" aria-label="Nudge up">&#8593;</button><span></span>
+      <button data-n="1,0" aria-label="Nudge left">&#8592;</button><button data-n="0,-8" aria-label="Nudge down">&#8595;</button><button data-n="-1,0" aria-label="Nudge right">&#8594;</button>
+    </div>
+    <button id="btnCenter" style="width:100%;margin-top:8px">Center</button>
+    <div class="msg" id="headMsg"></div>
+  </div>
+
+  <!-- Face -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">03</span>Face</div><div class="cap num" id="faceNow"></div></div>
+    <div class="grid faces" id="faces"></div>
+    <div class="msg" id="faceMsg"></div>
+  </div>
+
+  <!-- LED + dance -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">04</span>Lights &amp; motion</div></div>
+    <div class="swatches" id="swatches"></div>
+    <div class="rule"></div>
+    <div class="cap" style="margin-bottom:8px">Dance</div>
+    <div class="grid g3" id="dances"></div>
+    <div class="msg" id="ledMsg"></div>
+  </div>
+
+  <!-- Screen + volume -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">05</span>Screen &amp; sound</div></div>
+    <label class="cap" for="txt">Show text</label>
+    <div class="row">
+      <input id="txt" maxlength="120" placeholder="Hello from far away" style="flex:3">
+      <select id="txtSecs" class="mono" style="flex:1.1" aria-label="Seconds"><option value="5">5s</option><option value="10" selected>10s</option><option value="30">30s</option><option value="60">60s</option></select>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="btnText" class="primary" style="flex:2">Show</button>
+      <button id="btnScrOn">Screen on</button>
+      <button id="btnScrOff">Off</button>
+    </div>
+    <div class="rule"></div>
+    <div class="card-h" style="margin-bottom:0"><label class="cap" for="vol">Volume</label><span class="num" id="volVal">—</span></div>
+    <input type="range" id="vol" min="0" max="100" step="1" value="50">
+    <div class="msg" id="scrMsg"></div>
+  </div>
+
+  <!-- Reminders -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">06</span>Reminders</div><button class="ghost" id="btnRemRefresh">Refresh</button></div>
+    <div id="remList"><div class="empty">—</div></div>
+    <div class="rule"></div>
+    <div class="stack">
+      <input type="datetime-local" id="remAt" aria-label="Reminder time">
+      <input id="remText" maxlength="120" placeholder="Take a break">
+      <button id="btnRemAdd" class="primary" style="width:100%">Add reminder</button>
+    </div>
+    <div class="msg" id="remMsg"></div>
+  </div>
+
+  <!-- Wake PC -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">07</span>Wake PC</div></div>
+    <button id="btnWake" class="warn" style="width:100%">Wake PC</button>
+    <div class="msg" id="wakeMsg">Sends a Wake-on-LAN packet on the robot's network.</div>
+  </div>
+
+  <!-- Status -->
+  <div class="card">
+    <div class="card-h"><div class="cap"><span class="idx num">08</span>Status</div><button class="ghost" id="btnStatus">Refresh</button></div>
+    <div id="statusGrid" class="kv"><div><div class="cap">—</div><div class="v">—</div></div></div>
+    <div class="msg" id="statusMsg"></div>
+  </div>
+
+  <details class="card" id="logBox">
+    <summary class="cap">Link log</summary>
+    <div class="log" id="log"></div>
+  </details>
+
+  <div class="foot">
+    <div class="cap">Channel</div>
+    <div class="mono" id="footInfo" style="margin:4px 0 10px"></div>
+    <div class="row">
+      <button class="ghost" id="btnCopy">Copy link</button>
+      <button class="ghost" id="btnForget">Forget key</button>
+    </div>
+    <div class="msg" id="footMsg"></div>
+  </div>
+</section>
+</main>
+
+<script>
+"use strict";
+(() => {
+const DEFAULT_BROKER = "broker.hivemq.com";
+const DEFAULT_WSS_PORT = 8884;
+const STORE_LINK = "scRemote.link";
+const STORE_FLIP = "scRemote.flipX";
+const FACES = ["idle", "happy", "thinking", "sad", "surprised", "embarrassed", "angry", "sleepy", "love", "dizzy"];
+const LEDS = [
+  ["cyan", [127, 216, 232]], ["amber", [232, 176, 75]], ["green", [127, 217, 154]], ["red", [229, 83, 75]],
+  ["violet", [170, 110, 255]], ["white", [255, 255, 255]],
+];
+const DANCES = ["groove", "nod", "wiggle"];
+const ONLINE_MS = 45000;
+const PING_EVERY_MS = 15000;
+
+const $ = (id) => document.getElementById(id);
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+function store(op, key, value) {
+  try {
+    if (op === "get") return localStorage.getItem(key);
+    if (op === "set") { localStorage.setItem(key, value); return true; }
+    if (op === "del") { localStorage.removeItem(key); return true; }
+  } catch (e) { /* storage unavailable (private mode etc.) */ }
+  return op === "get" ? null : false;
+}
+
+// ---------- base64url / link parsing ----------
+function b64urlEncode(bytes) {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function b64urlDecode(text) {
+  let t = text.trim().replace(/-/g, "+").replace(/_/g, "/").replace(/=+$/, "");
+  t += "=".repeat((4 - (t.length % 4)) % 4);
+  const bin = atob(t);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+function parseLink(input, fallbackBroker, fallbackPort) {
+  input = (input || "").trim();
+  let frag = null;
+  const hash = input.indexOf("#");
+  if (hash >= 0) frag = input.slice(hash + 1);
+  else if (/(^|&)k=/.test(input)) frag = input;
+  let k, b = fallbackBroker || DEFAULT_BROKER, p = fallbackPort || DEFAULT_WSS_PORT;
+  if (frag !== null) {
+    const params = new URLSearchParams(frag);
+    k = params.get("k");
+    if (params.get("b")) b = params.get("b");
+    if (params.get("p")) p = parseInt(params.get("p"), 10);
+  } else {
+    k = input;
+  }
+  if (!k) throw new Error("no key found (expected #k=…)");
+  let key;
+  try { key = b64urlDecode(k); } catch (e) { throw new Error("key is not valid base64url"); }
+  if (key.length !== 32) throw new Error("key must be 32 bytes, got " + key.length);
+  if (!/^[A-Za-z0-9.-]+$/.test(b)) throw new Error("invalid broker host");
+  if (!(p > 0 && p < 65536)) throw new Error("invalid port");
+  return { key, broker: b, port: p };
+}
+function fragmentFor(cfg) {
+  let f = "k=" + b64urlEncode(cfg.key) + "&b=" + cfg.broker;
+  if (cfg.port !== DEFAULT_WSS_PORT) f += "&p=" + cfg.port;
+  return f;
+}
+
+// ---------- crypto (protocol v1) ----------
+let cfg = null, aesKey = null, T = null;
+async function deriveTopics(key) {
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", key));
+  const hex = Array.from(digest.slice(0, 8), (b) => b.toString(16).padStart(2, "0")).join("");
+  const base = "sc1/" + hex;
+  return { base, c: base + "/c", e: base + "/e", i: base + "/i" };
+}
+async function seal(topic, plain, iv) {
+  iv = iv || crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, additionalData: enc.encode(topic), tagLength: 128 }, aesKey, plain));
+  const out = new Uint8Array(13 + ct.length);
+  out[0] = 1;
+  out.set(iv, 1);
+  out.set(ct, 13);
+  return out;
+}
+async function openSealed(topic, data) {
+  if (data.length < 29 || data[0] !== 1) throw new Error("bad envelope");
+  return new Uint8Array(await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: data.slice(1, 13), additionalData: enc.encode(topic), tagLength: 128 },
+    aesKey, data.slice(13)));
+}
+function newId() { return b64urlEncode(crypto.getRandomValues(new Uint8Array(9))); }
+
+// ---------- log ----------
+function log(text, cls) {
+  const el = document.createElement("div");
+  if (cls) el.className = cls;
+  const t = new Date();
+  el.textContent = t.toTimeString().slice(0, 8) + "  " + text;
+  const box = $("log");
+  box.prepend(el);
+  while (box.childElementCount > 60) box.lastChild.remove();
+}
+function setMsg(el, text, cls) {
+  el.textContent = text || "";
+  el.className = "msg" + (cls ? " " + cls : "");
+}
+function chip(id, state, text) {
+  const el = $(id);
+  el.className = "chip" + (state ? " s-" + state : "");
+  el.querySelector(".v span:last-child").textContent = text;
+}
+function banner(text, isErr) {
+  const b = $("banner");
+  if (!text) { b.classList.add("hidden"); return; }
+  b.textContent = text;
+  b.className = "banner" + (isErr ? " err" : "");
+}
+
+// ---------- MQTT ----------
+let client = null;
+let brokerUp = false;
+let lastSeen = 0;
+let robotSynced = null;
+let badFrames = 0;
+let lastSealed = null;
+const pending = new Map();
+
+function connect() {
+  const url = "wss://" + cfg.broker + ":" + cfg.port + "/mqtt";
+  chip("chipBroker", "warn", "connecting");
+  log("connecting " + url);
+  client = mqtt.connect(url, {
+    clientId: "scp-" + newId().replace(/[^A-Za-z0-9]/g, ""),
+    clean: true, keepalive: 30, reconnectPeriod: 3000, connectTimeout: 10000,
+    resubscribe: false, protocolVersion: 4,
+  });
+  client.on("connect", () => {
+    brokerUp = true;
+    chip("chipBroker", "ok", "online");
+    log("broker connected", "o");
+    client.subscribe([T.e, T.i], { qos: 0 }, (err) => {
+      if (err) { log("subscribe failed: " + err.message, "e"); return; }
+      // ping() also pulls status and reminders once the robot answers.
+      lastPing = Date.now();
+      lastSeen = 0;
+      ping();
+      if (liveOn) sendStream(true, true);
+    });
+  });
+  client.on("reconnect", () => chip("chipBroker", "warn", "reconnecting"));
+  client.on("offline", () => { brokerUp = false; chip("chipBroker", "err", "offline"); });
+  client.on("close", () => { if (brokerUp) log("broker connection closed", "w"); brokerUp = false; if (!navigator.onLine) chip("chipBroker", "err", "no internet"); });
+  client.on("error", (err) => { log("mqtt error: " + (err && err.message), "e"); chip("chipBroker", "err", "error"); });
+  client.on("message", (topic, payload) => { onMessage(topic, new Uint8Array(payload)).catch((e) => log("message error: " + e.message, "e")); });
+}
+
+async function onMessage(topic, data) {
+  let plain;
+  try {
+    plain = await openSealed(topic, data);
+  } catch (e) {
+    badFrames++;
+    banner("Received " + badFrames + " message(s) that this key cannot decrypt. Is the link up to date?");
+    log("undecryptable message on " + topic.slice(-2), "w");
+    return;
+  }
+  lastSeen = Date.now();
+  updateRobotChip();
+  if (topic === T.i) { showFrame(plain); return; }
+  let msg;
+  try { msg = JSON.parse(dec.decode(plain)); } catch (e) { log("bad JSON from robot", "e"); return; }
+  if (msg.re !== undefined) {
+    const p = pending.get(msg.re);
+    if (p) {
+      pending.delete(msg.re);
+      clearTimeout(p.timer);
+      if (!p.quiet) log("← " + p.cmd + (msg.ok ? " ok" : " ERROR " + (msg.error || "")), msg.ok ? "o" : "e");
+      if (msg.ok) p.resolve(msg); else p.reject(new Error(msg.error || "failed"));
+    } else {
+      log("← reply for unknown id " + msg.re + (msg.ok ? " ok" : " ERROR " + (msg.error || "")), msg.ok ? "" : "e");
+    }
+    if (typeof msg.time_synced === "boolean") setSynced(msg.time_synced);
+    return;
+  }
+  if (msg.ev) handleEvent(msg);
+}
+
+function send(cmd, args, opts) {
+  opts = opts || {};
+  return new Promise(async (resolve, reject) => {
+    if (!client || !brokerUp) { reject(new Error("not connected to broker")); return; }
+    const id = newId();
+    const msg = Object.assign({}, args || {}, { id, ts: Date.now(), cmd });
+    let payload;
+    try { payload = await seal(T.c, enc.encode(JSON.stringify(msg))); } catch (e) { reject(e); return; }
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      if (!opts.quiet) log("✕ " + cmd + " timed out", "w");
+      reject(new Error("no reply from robot (timeout)"));
+    }, opts.timeout || 8000);
+    pending.set(id, { resolve, reject, timer, cmd, quiet: opts.quiet });
+    lastSealed = payload;
+    if (!opts.quiet) log("→ " + cmd + (args && Object.keys(args).length ? " " + JSON.stringify(args) : ""));
+    client.publish(T.c, payload, { qos: 0 }, (err) => {
+      if (err) { clearTimeout(timer); pending.delete(id); reject(err); }
+    });
+  });
+}
+
+function friendly(err) {
+  const m = err && err.message ? err.message : String(err);
+  if (m === "stale") return "rejected: timestamp too old — check this phone's clock";
+  if (m === "replay") return "rejected as a replay";
+  return m;
+}
+
+// Runs a command from a button, showing busy state and the result in a section message line.
+async function act(btn, msgEl, cmd, args, okText, opts) {
+  if (btn) { btn.disabled = true; btn.classList.add("busy"); }
+  setMsg(msgEl, cmd + " …");
+  try {
+    const r = await send(cmd, args, opts);
+    setMsg(msgEl, typeof okText === "function" ? okText(r) : (okText || cmd + " ok"), "ok");
+    return r;
+  } catch (e) {
+    setMsg(msgEl, friendly(e), "err");
+    return null;
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove("busy"); }
+  }
+}
+
+// ---------- robot / clock chips ----------
+function updateRobotChip() {
+  if (!lastSeen) { chip("chipRobot", brokerUp ? "warn" : "", brokerUp ? "waiting" : "—"); return; }
+  const age = Math.round((Date.now() - lastSeen) / 1000);
+  if (Date.now() - lastSeen < ONLINE_MS) chip("chipRobot", "ok", "online " + age + "s");
+  else chip("chipRobot", "err", "seen " + fmtAge(age));
+}
+function fmtAge(s) {
+  if (s < 90) return s + "s ago";
+  if (s < 5400) return Math.round(s / 60) + "m ago";
+  return Math.round(s / 3600) + "h ago";
+}
+function setSynced(v) {
+  robotSynced = v;
+  chip("chipClock", v ? "ok" : "warn", v ? "synced" : "not synced");
+}
+function ping() {
+  const wasOnline = lastSeen && Date.now() - lastSeen < ONLINE_MS;
+  send("ping", {}, { quiet: true }).then((r) => {
+    setSynced(!!r.time_synced);
+    // The robot came (back) online: fetch what the initial requests may have missed.
+    if (!wasOnline) { refreshStatus(true); refreshReminders(true); }
+  }).catch(() => {});
+}
+setInterval(() => {
+  if (!cfg) return;
+  updateRobotChip();
+  if (brokerUp && document.visibilityState === "visible" && Date.now() - lastPing >= PING_EVERY_MS) { lastPing = Date.now(); ping(); }
+  if (lastFrameAt) $("camAge").textContent = fmtAge(Math.round((Date.now() - lastFrameAt) / 1000));
+}, 1000);
+let lastPing = 0;
+
+// ---------- camera ----------
+let liveOn = false, fps = 1, lastFrameAt = 0, frameTimes = [], frameUrl = null;
+function showFrame(bytes) {
+  const blob = new Blob([bytes], { type: "image/jpeg" });
+  const url = URL.createObjectURL(blob);
+  const img = $("camImg");
+  const prev = frameUrl;
+  img.onload = () => { if (prev) URL.revokeObjectURL(prev); };
+  img.src = url;
+  frameUrl = url;
+  img.classList.remove("hidden");
+  $("camNone").classList.add("hidden");
+  lastFrameAt = Date.now();
+  frameTimes.push(lastFrameAt);
+  frameTimes = frameTimes.filter((t) => lastFrameAt - t < 5000);
+  $("camInfo").textContent = (bytes.length / 1024).toFixed(1) + " KB";
+  $("camAge").textContent = "now";
+  $("camFps").textContent = liveOn ? (frameTimes.length / 5).toFixed(1) + " fps" : "";
+}
+$("btnSnap").onclick = () => act($("btnSnap"), $("camMsg"), "photo", { quality: 70 }, (r) => "photo " + (r.bytes / 1024).toFixed(1) + " KB", { timeout: 15000 });
+function setLiveUi(on) {
+  liveOn = on;
+  $("btnLive").classList.toggle("on", on);
+  $("btnLive").textContent = on ? "Stop" : "Live";
+  $("camLive").classList.toggle("hidden", !on);
+  if (!on) $("camFps").textContent = "";
+}
+async function sendStream(on, quiet) {
+  const r = await act(quiet ? null : $("btnLive"), $("camMsg"), "stream", on ? { on: true, fps } : { on: false },
+    (r) => r.streaming ? "live at " + r.fps + " fps" : "live stopped");
+  if (r) setLiveUi(!!r.streaming); else if (on) setLiveUi(false);
+}
+$("btnLive").onclick = () => sendStream(!liveOn);
+$("fpsSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-fps]");
+  if (!b) return;
+  fps = parseInt(b.dataset.fps, 10);
+  for (const x of $("fpsSeg").children) x.classList.toggle("on", x === b);
+  if (liveOn) sendStream(true);
+});
+document.addEventListener("visibilitychange", () => {
+  if (!cfg) return;
+  if (document.visibilityState === "hidden" && liveOn) {
+    send("stream", { on: false }, { quiet: true }).catch(() => {});
+    setLiveUi(false);
+    setMsg($("camMsg"), "live paused while the page was hidden");
+  } else if (document.visibilityState === "visible" && brokerUp) {
+    lastPing = Date.now();
+    ping();
+  }
+});
+
+// ---------- head ----------
+let flipX = store("get", STORE_FLIP) === "1";
+let target = { yaw: 0, pitch: 45 }, actual = null, dragging = false, lastLookSent = 0, lookTimer = null, sentTarget = null;
+const pad = $("pad");
+function yawToX(yaw) { return ((flipX ? yaw : -yaw) + 90) / 180; }
+function drawPad() {
+  const t = $("padTgt");
+  t.style.left = (yawToX(target.yaw) * 100) + "%";
+  t.style.top = ((88 - target.pitch) / 88 * 100) + "%";
+  const a = $("padAct");
+  if (actual) {
+    a.style.display = "";
+    a.style.left = (yawToX(actual.yaw) * 100) + "%";
+    a.style.top = ((88 - actual.pitch) / 88 * 100) + "%";
+  } else a.style.display = "none";
+  $("roYaw").textContent = (target.yaw > 0 ? "+" : "") + target.yaw + (actual ? " / " + actual.yaw : "");
+  $("roPitch").textContent = target.pitch + (actual ? " / " + actual.pitch : "");
+  $("padRight").textContent = flipX ? "+90°" : "−90°";
+  $("btnFlip").classList.toggle("on", flipX);
+}
+function setActual(r) {
+  if (typeof r.yaw === "number" && typeof r.pitch === "number") { actual = { yaw: Math.round(r.yaw), pitch: Math.round(r.pitch) }; drawPad(); }
+}
+function padPoint(e) {
+  const r = pad.getBoundingClientRect();
+  const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+  const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+  let yaw = Math.round(x * 180 - 90);
+  if (!flipX) yaw = -yaw;
+  target = { yaw, pitch: Math.round((1 - y) * 88) };
+  drawPad();
+}
+function sendLook(final) {
+  clearTimeout(lookTimer);
+  lookTimer = null;
+  if (sentTarget && sentTarget.yaw === target.yaw && sentTarget.pitch === target.pitch && !final) return;
+  sentTarget = { ...target };
+  lastLookSent = Date.now();
+  const p = send("look", { yaw: target.yaw, pitch: target.pitch }, { quiet: !final });
+  p.then((r) => { setActual(r); if (final) setMsg($("headMsg"), "look " + target.yaw + " / " + target.pitch, "ok"); })
+   .catch((e) => { if (final) setMsg($("headMsg"), friendly(e), "err"); });
+}
+function scheduleLook() {
+  const wait = 200 - (Date.now() - lastLookSent);
+  if (wait <= 0) sendLook(false);
+  else if (!lookTimer) lookTimer = setTimeout(() => sendLook(false), wait);
+}
+pad.addEventListener("pointerdown", (e) => { dragging = true; pad.setPointerCapture(e.pointerId); padPoint(e); scheduleLook(); });
+pad.addEventListener("pointermove", (e) => { if (!dragging) return; padPoint(e); scheduleLook(); });
+const endDrag = (e) => { if (!dragging) return; dragging = false; padPoint(e); sendLook(true); };
+pad.addEventListener("pointerup", endDrag);
+// A cancelled gesture (system gesture, palm rejection) still commits the last target.
+const cancelDrag = () => { if (!dragging) return; dragging = false; sendLook(true); };
+pad.addEventListener("pointercancel", cancelDrag);
+pad.addEventListener("lostpointercapture", cancelDrag);
+document.querySelectorAll(".nudge button").forEach((b) => {
+  b.onclick = () => {
+    let [dy, dp] = b.dataset.n.split(",").map(Number);
+    dy = dy * 10 * (flipX ? -1 : 1);
+    act(b, $("headMsg"), "nudge", { dyaw: dy, dpitch: dp }, (r) => { setActual(r); if (r.yaw !== undefined) { target = { yaw: Math.round(r.yaw), pitch: Math.round(r.pitch) }; drawPad(); } return "nudge ok"; });
+  };
+});
+$("btnCenter").onclick = () => act($("btnCenter"), $("headMsg"), "center", {}, (r) => { setActual(r); if (r.yaw !== undefined) { target = { yaw: Math.round(r.yaw), pitch: Math.round(r.pitch) }; drawPad(); } return "centered"; });
+$("btnFlip").onclick = () => { flipX = !flipX; store("set", STORE_FLIP, flipX ? "1" : "0"); drawPad(); };
+
+// ---------- face / LEDs / dance ----------
+let currentFace = null;
+function markFace(name) {
+  currentFace = name;
+  $("faceNow").textContent = name || "";
+  document.querySelectorAll("#faces button").forEach((b) => b.classList.toggle("on", b.dataset.face === name));
+}
+for (const f of FACES) {
+  const b = document.createElement("button");
+  b.textContent = f;
+  b.title = f;
+  b.dataset.face = f;
+  b.onclick = () => act(b, $("faceMsg"), "face", { name: f }, () => { markFace(f); return "face " + f; });
+  $("faces").appendChild(b);
+}
+for (const [name, rgb] of LEDS) {
+  const b = document.createElement("button");
+  b.className = "sw";
+  b.title = name;
+  b.setAttribute("aria-label", "LED " + name);
+  b.innerHTML = "<i></i>";
+  b.firstChild.style.background = "rgb(" + rgb.join(",") + ")";
+  b.onclick = () => act(b, $("ledMsg"), "led", { r: rgb[0], g: rgb[1], b: rgb[2] }, "LED " + name);
+  $("swatches").appendChild(b);
+}
+{
+  const b = document.createElement("label");
+  b.className = "btn sw custom";
+  b.title = "custom colour";
+  b.innerHTML = '<i style="background:conic-gradient(#e5534b,#e8b04b,#7fd99a,#7fd8e8,#aa6eff,#e5534b)"></i><input type="color" value="#7fd8e8" aria-label="Custom LED colour">';
+  b.querySelector("input").addEventListener("change", (e) => {
+    const v = e.target.value;
+    const rgb = [1, 3, 5].map((i) => parseInt(v.slice(i, i + 2), 16));
+    act(null, $("ledMsg"), "led", { r: rgb[0], g: rgb[1], b: rgb[2] }, "LED " + v);
+  });
+  $("swatches").appendChild(b);
+  const off = document.createElement("button");
+  off.textContent = "Off";
+  off.onclick = () => act(off, $("ledMsg"), "led_off", {}, "LED off");
+  $("swatches").appendChild(off);
+}
+for (const d of DANCES) {
+  const b = document.createElement("button");
+  b.textContent = d;
+  b.onclick = () => act(b, $("ledMsg"), "dance", { name: d }, "dance " + d);
+  $("dances").appendChild(b);
+}
+
+// ---------- screen / volume ----------
+$("btnText").onclick = () => {
+  const text = $("txt").value.trim();
+  if (!text) { setMsg($("scrMsg"), "type something to show", "warn"); return; }
+  act($("btnText"), $("scrMsg"), "show_text", { text, seconds: parseInt($("txtSecs").value, 10) }, "shown on screen");
+};
+$("txt").addEventListener("keydown", (e) => { if (e.key === "Enter") $("btnText").click(); });
+$("btnScrOn").onclick = () => act($("btnScrOn"), $("scrMsg"), "screen", { on: true }, "screen on");
+$("btnScrOff").onclick = () => act($("btnScrOff"), $("scrMsg"), "screen", { on: false }, "screen off");
+let volTimer = null;
+function paintVol(v) {
+  $("vol").style.setProperty("--pct", v + "%");
+  $("volVal").textContent = v;
+}
+$("vol").addEventListener("input", (e) => {
+  paintVol(e.target.value);
+  clearTimeout(volTimer);
+  volTimer = setTimeout(() => act(null, $("scrMsg"), "volume", { level: parseInt($("vol").value, 10) }, (r) => "volume " + (r.volume !== undefined ? r.volume : $("vol").value)), 350);
+});
+
+// ---------- reminders ----------
+function pad2(n) { return String(n).padStart(2, "0"); }
+function localInputValue(d) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "T" + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+}
+function resetRemAt() {
+  const d = new Date(Date.now() + 3600 * 1000);
+  d.setSeconds(0, 0);
+  d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5);
+  $("remAt").value = localInputValue(d);
+}
+function renderReminders(list) {
+  const box = $("remList");
+  box.textContent = "";
+  if (!list.length) { box.innerHTML = '<div class="empty">No reminders.</div>'; return; }
+  for (const r of list) {
+    const row = document.createElement("div");
+    row.className = "rem";
+    const when = document.createElement("div");
+    when.className = "when";
+    const d = new Date(r.at * 1000);
+    when.textContent = d.toLocaleDateString(undefined, { weekday: "short", day: "2-digit", month: "2-digit" }) + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    const what = document.createElement("div");
+    what.className = "what";
+    what.textContent = r.text;
+    const del = document.createElement("button");
+    del.className = "danger";
+    del.textContent = "×";
+    del.setAttribute("aria-label", "Delete reminder");
+    del.onclick = async () => {
+      const ok = await act(del, $("remMsg"), "reminder_del", { rid: r.id }, "deleted");
+      if (ok) refreshReminders();
+    };
+    row.append(when, what, del);
+    box.appendChild(row);
+  }
+}
+async function refreshReminders(quiet) {
+  const r = await act(quiet ? null : $("btnRemRefresh"), $("remMsg"), "reminder_list", {}, (r) => (r.reminders || []).length + " reminder(s)", { quiet });
+  if (r && Array.isArray(r.reminders)) renderReminders(r.reminders);
+}
+$("btnRemRefresh").onclick = () => refreshReminders();
+$("btnRemAdd").onclick = async () => {
+  const when = $("remAt").value;
+  const text = $("remText").value.trim();
+  if (!when) { setMsg($("remMsg"), "pick a date and time", "warn"); return; }
+  if (!text) { setMsg($("remMsg"), "write the reminder text", "warn"); return; }
+  const at = Math.floor(new Date(when).getTime() / 1000);
+  if (!(at > 0)) { setMsg($("remMsg"), "invalid date", "warn"); return; }
+  if (at < Date.now() / 1000 - 30) { setMsg($("remMsg"), "that time is in the past", "warn"); return; }
+  const r = await act($("btnRemAdd"), $("remMsg"), "reminder_add", { at, text }, "reminder added");
+  if (r) { $("remText").value = ""; resetRemAt(); refreshReminders(true); }
+};
+
+// ---------- wake PC (two-step confirm) ----------
+let wakeArmed = null;
+$("btnWake").onclick = () => {
+  const b = $("btnWake");
+  if (!wakeArmed) {
+    b.textContent = "Tap again to wake";
+    b.classList.add("on");
+    setMsg($("wakeMsg"), "confirm within 4 s", "warn");
+    wakeArmed = setTimeout(() => { wakeArmed = null; b.textContent = "Wake PC"; b.classList.remove("on"); setMsg($("wakeMsg"), ""); }, 4000);
+    return;
+  }
+  clearTimeout(wakeArmed);
+  wakeArmed = null;
+  b.textContent = "Wake PC";
+  b.classList.remove("on");
+  act(b, $("wakeMsg"), "wake_pc", {}, (r) => "magic packet sent" + (r.mac ? " to " + r.mac : ""));
+};
+
+// ---------- status ----------
+let lastStatusAt = 0;
+const STATUS_ORDER = ["battery", "charging", "pc_link", "face", "volume", "yaw", "pitch", "rssi", "uptime_s", "time", "time_synced", "screen"];
+function fmtVal(k, v) {
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  if (k === "uptime_s" && typeof v === "number") {
+    const h = Math.floor(v / 3600), m = Math.floor((v % 3600) / 60);
+    return (h ? h + "h " : "") + m + "m";
+  }
+  if (k === "battery" && typeof v === "number") return v + "%";
+  if (k === "rssi" && typeof v === "number") return v + " dBm";
+  if (k === "time" && typeof v === "string") { const d = new Date(v); if (!isNaN(d)) return d.toLocaleTimeString(); }
+  if (v !== null && typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+function renderStatus(s) {
+  lastStatusAt = Date.now();
+  const grid = $("statusGrid");
+  grid.textContent = "";
+  const keys = Object.keys(s).filter((k) => !["re", "ok", "ev"].includes(k));
+  keys.sort((a, b) => (STATUS_ORDER.indexOf(a) + 1 || 99) - (STATUS_ORDER.indexOf(b) + 1 || 99));
+  for (const k of keys) {
+    const cell = document.createElement("div");
+    const cap = document.createElement("div");
+    cap.className = "cap";
+    cap.textContent = k.replace(/_/g, " ");
+    const v = document.createElement("div");
+    v.className = "v";
+    v.textContent = fmtVal(k, s[k]);
+    if (k === "charging" && s[k]) v.style.color = "var(--ok)";
+    if (k === "pc_link") v.style.color = s[k] ? "var(--ok)" : "var(--dim)";
+    cell.append(cap, v);
+    if (k === "battery" && typeof s[k] === "number") {
+      const bar = document.createElement("div");
+      bar.className = "battery";
+      const fill = document.createElement("i");
+      fill.style.width = Math.max(0, Math.min(100, s[k])) + "%";
+      if (s[k] < 20) fill.style.background = "var(--err)"; else if (s[k] < 40) fill.style.background = "var(--warn)";
+      bar.appendChild(fill);
+      cell.appendChild(bar);
+    }
+    grid.appendChild(cell);
+  }
+  if (keys.length % 2) grid.appendChild(document.createElement("div"));
+  if (typeof s.time_synced === "boolean") setSynced(s.time_synced);
+  if (typeof s.face === "string") markFace(s.face);
+  if (typeof s.volume === "number" && document.activeElement !== $("vol")) { $("vol").value = s.volume; paintVol(s.volume); }
+  setActual(s);
+  if (!dragging && !sentTarget && typeof s.yaw === "number") { target = { yaw: Math.round(s.yaw), pitch: Math.round(s.pitch) }; drawPad(); }
+}
+async function refreshStatus(quiet) {
+  const r = await act(quiet ? null : $("btnStatus"), $("statusMsg"), "status", {}, "updated", { quiet });
+  if (r) renderStatus(r);
+}
+$("btnStatus").onclick = () => refreshStatus();
+
+function handleEvent(ev) {
+  if (ev.ev === "status") { renderStatus(ev); setMsg($("statusMsg"), "live update", "ok"); return; }
+  if (ev.ev === "stream") {
+    if (ev.on === false) { setLiveUi(false); setMsg($("camMsg"), "live stopped by robot" + (ev.reason ? " (" + ev.reason + ")" : ""), "warn"); }
+    return;
+  }
+  if (ev.ev === "reminder") {
+    log("⏰ reminder: " + (ev.text || ""), "w");
+    setMsg($("remMsg"), "⏰ " + (ev.text || "reminder"), "warn");
+    refreshReminders(true);
+    return;
+  }
+  log("event " + ev.ev + " " + JSON.stringify(ev).slice(0, 120));
+}
+
+// ---------- footer ----------
+function linkUrl() { return location.href.split("#")[0] + "#" + fragmentFor(cfg); }
+$("btnCopy").onclick = async () => {
+  try { await navigator.clipboard.writeText(linkUrl()); setMsg($("footMsg"), "link copied — anyone with it controls the robot", "warn"); }
+  catch (e) { setMsg($("footMsg"), linkUrl(), "warn"); }
+};
+let forgetArmed = null;
+$("btnForget").onclick = () => {
+  if (!forgetArmed) {
+    $("btnForget").textContent = "Tap to confirm";
+    $("btnForget").classList.add("danger");
+    forgetArmed = setTimeout(() => { forgetArmed = null; $("btnForget").textContent = "Forget key"; $("btnForget").classList.remove("danger"); }, 4000);
+    return;
+  }
+  store("del", STORE_LINK);
+  if (client) client.end(true);
+  location.replace(location.href.split("#")[0]);
+};
+
+// ---------- setup ----------
+$("genKey").onclick = () => {
+  const key = crypto.getRandomValues(new Uint8Array(32));
+  const c = { key, broker: $("setupBroker").value.trim() || DEFAULT_BROKER, port: parseInt($("setupPort").value, 10) || DEFAULT_WSS_PORT };
+  const link = location.href.split("#")[0] + "#" + fragmentFor(c);
+  $("genOut").textContent = "key: " + b64urlEncode(key) + "\nlink: " + link;
+  $("genOut").style.whiteSpace = "pre-wrap";
+  $("setupLink").value = link;
+};
+
+async function start(c) {
+  if (!window.crypto || !crypto.subtle) throw new Error("this page needs HTTPS (WebCrypto unavailable)");
+  if (typeof mqtt === "undefined") throw new Error("mqtt.js failed to load — check the connection and reload");
+  cfg = c;
+  aesKey = await crypto.subtle.importKey("raw", c.key, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  T = await deriveTopics(c.key);
+  const saved = store("set", STORE_LINK, fragmentFor(c));
+  if (saved && location.hash) history.replaceState(null, "", location.pathname + location.search);
+  $("setup").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("footInfo").textContent = T.base + " · " + c.broker + ":" + c.port + (saved ? "" : " · not saved (storage off)");
+  chip("chipRobot", "", "—");
+  chip("chipClock", "", "unknown");
+  resetRemAt();
+  paintVol(50);
+  drawPad();
+  connect();
+}
+
+// Debug hooks for testing from the console (only re-sends this page's own ciphertext).
+window.scDebug = {
+  replayLast() { if (lastSealed && client) { client.publish(T.c, lastSealed, { qos: 0 }); return true; } return false; },
+  topics() { return T; },
+  async sealWith(topic, plainText, ivHex) {
+    const iv = new Uint8Array(ivHex.match(/../g).map((h) => parseInt(h, 16)));
+    const out = await seal(topic, enc.encode(plainText), iv);
+    return Array.from(out, (b) => b.toString(16).padStart(2, "0")).join("");
+  },
+};
+
+async function boot() {
+  let c = null;
+  try {
+    if (location.hash.length > 1) c = parseLink(location.href);
+    else if (store("get", STORE_LINK)) c = parseLink("#" + store("get", STORE_LINK));
+  } catch (e) {
+    $("setup").classList.remove("hidden");
+    setMsg($("setupMsg"), "link problem: " + e.message, "err");
+    return;
+  }
+  if (!c) { $("setup").classList.remove("hidden"); return; }
+  try { await start(c); }
+  catch (e) {
+    $("app").classList.add("hidden");
+    $("setup").classList.remove("hidden");
+    setMsg($("setupMsg"), e.message, "err");
+  }
+}
+$("setupGo").onclick = async () => {
+  try {
+    const c = parseLink($("setupLink").value, $("setupBroker").value.trim(), parseInt($("setupPort").value, 10));
+    await start(c);
+  } catch (e) { setMsg($("setupMsg"), e.message, "err"); }
+};
+boot();
+})();
+</script>
+</body>
+</html>
