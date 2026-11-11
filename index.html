@@ -322,8 +322,8 @@ details[open] > summary::after { content: "\2212"; }
         <div class="aim hidden" id="camAim"></div>
         <button class="vbtn vu" data-v="0,8" aria-label="Look up">&#8593;</button>
         <button class="vbtn vd" data-v="0,-8" aria-label="Look down">&#8595;</button>
-        <button class="vbtn vl" data-v="10,0" aria-label="Look left">&#8592;</button>
-        <button class="vbtn vr" data-v="-10,0" aria-label="Look right">&#8594;</button>
+        <button class="vbtn vl" data-v="-10,0" aria-label="Look left">&#8592;</button>
+        <button class="vbtn vr" data-v="10,0" aria-label="Look right">&#8594;</button>
       </div>
       <div class="side">
         <div class="pad" id="pad">
@@ -1191,11 +1191,11 @@ document.querySelectorAll(".vbtn").forEach((b) => {
 });
 // A tap on the picture turns the head so that spot comes to the middle. The camera sees
 // 56 x 43 degrees (the firmware's own figures for face tracking); a point right of the
-// middle means a smaller yaw, a point above it a larger pitch.
+// middle means a larger yaw (checked on the real robot 2026-11-11), a point above it a larger pitch.
 const CAM_HFOV = 56, CAM_VFOV = 43;
 function tapAngles(x, y) {  // x, y: -1 (left / top) .. +1 (right / bottom) of the picture
   const deg = (v, fov) => Math.atan(v * Math.tan(fov / 2 * Math.PI / 180)) * 180 / Math.PI;
-  return { dyaw: Math.round(-deg(x, CAM_HFOV)), dpitch: Math.round(-deg(y, CAM_VFOV)) };
+  return { dyaw: Math.round(deg(x, CAM_HFOV)), dpitch: Math.round(-deg(y, CAM_VFOV)) };
 }
 $("camView").addEventListener("click", (e) => {
   const img = $("camImg");
